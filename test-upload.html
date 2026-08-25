@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>اختبار رفع الصور</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      text-align: center;
+    }
+
+    input {
+      margin: 20px 0;
+    }
+
+    button {
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+
+    #result {
+      margin-top: 20px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>اختبار رفع عدة صور</h2>
+
+  <input
+    type="file"
+    id="images"
+    accept="image/*"
+    multiple
+  >
+
+  <br>
+
+  <button id="upload">
+    رفع الصور
+  </button>
+
+  <p id="result"></p>
+
+<script>
+const input = document.getElementById("images");
+const button = document.getElementById("upload");
+const result = document.getElementById("result");
+
+button.addEventListener("click", async () => {
+
+  if (input.files.length === 0) {
+    result.textContent = "اختر صورة واحدة على الأقل.";
+    return;
+  }
+
+  const formData = new FormData();
+
+  for (const file of input.files) {
+    formData.append("images", file);
+  }
+
+  result.textContent =
+    `جاري رفع ${input.files.length} صورة...`;
+
+  try {
+
+    const response = await fetch("/upload", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await response.json();
+
+    result.textContent =
+      "الخادم رد:\n" +
+      JSON.stringify(data, null, 2);
+
+  } catch (error) {
+
+    result.textContent =
+      "فشل الاتصال:\n" + error.message;
+
+    console.error(error);
+  }
+});
+</script>
+
+</body>
+</html>
